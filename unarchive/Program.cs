@@ -72,7 +72,13 @@ namespace Unarchive
       var targetDirectory = Path.Combine(targetDirectoryBase,
         !string.IsNullOrWhiteSpace(CliOptions.Directory) ? CliOptions.Directory : GetShowName(Path.GetFileName(Directory.GetCurrentDirectory().TrimEnd('\\'))));
       Log.Information($"Unpacking to {targetDirectory}");
-      GetAllRars().AsParallel().ForAll(r => UnpackRar(r, targetDirectory));
+      IEnumerable<string> rars = GetAllRars().OrderBy(p => p);
+      if (CliOptions.EpisodeCount > 0)
+      {
+        rars = rars.Take(CliOptions.EpisodeCount);
+      }
+      Log.Information($"Episode count: {CliOptions.EpisodeCount}");
+      rars.AsParallel().ForAll(r => UnpackRar(r, targetDirectory));
     }
 
     private static ImmutableArray<string> GetAllRars()
