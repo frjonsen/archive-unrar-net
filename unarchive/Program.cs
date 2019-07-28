@@ -67,9 +67,9 @@ namespace Unarchive
     private static void UnpackTv()
     {
       var targetDirectoryBase = GetTargetBaseDirectory(ArchiveType.Tv);
-      var targetDirectory = !string.IsNullOrWhiteSpace(CliOptions.Directory)
-        ? Path.Combine(targetDirectoryBase, CliOptions.Directory)
-        : targetDirectoryBase;
+
+      var targetDirectory = Path.Combine(targetDirectoryBase,
+        !string.IsNullOrWhiteSpace(CliOptions.Directory) ? CliOptions.Directory : GetShowName(Path.GetFileName(Directory.GetCurrentDirectory().TrimEnd('\\'))));
       Log.Information($"Unpacking to {targetDirectory}");
       // If there is a rar in cwd, assume single episode
       var mainRar = GetRarFileFromDirectory(Directory.GetCurrentDirectory());
