@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -71,13 +72,15 @@ namespace Unarchive
       var targetDirectory = Path.Combine(targetDirectoryBase,
         !string.IsNullOrWhiteSpace(CliOptions.Directory) ? CliOptions.Directory : GetShowName(Path.GetFileName(Directory.GetCurrentDirectory().TrimEnd('\\'))));
       Log.Information($"Unpacking to {targetDirectory}");
-      // If there is a rar in cwd, assume single episode
-      var mainRar = GetRarFileFromDirectory(Directory.GetCurrentDirectory());
-      if (mainRar != null)
-      {
-        Log.Information("Found a rar in cwd. Assuming this is not a pack.");
-        UnpackRar(mainRar, targetDirectory);
-      }
+      GetAllRars().AsParallel().ForAll(r => UnpackRar(r, targetDirectory));
+    }
+
+    private static ImmutableArray<string> GetAllRars()
+    {
+      var rootDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+      return rootDir.GetFiles("*.rar", SearchOption.AllDirectories)
+        .Select(r => r.FullName)
+        .ToImmutableArray();
     }
 
     internal static string GetShowName(string cwd)
@@ -105,14 +108,16 @@ namespace Unarchive
     private static void UnpackRar(string source, string destination)
     {
       Log.Information($"Unpacking {source}");
-      using var archive = RarArchive.Open(source);
-      foreach (var entry in archive.Entries)
+      using (var archive = RarArchive.Open(source))
       {
-        entry.WriteToDirectory(destination, new ExtractionOptions
+        foreach (var entry in archive.Entries)
         {
-          ExtractFullPath = true,
-          Overwrite = true
-        });
+            entry.WriteToDirectory(destination, new ExtractionOptions
+            {
+              ExtractFullPath = true,
+              Overwrite = true
+            });
+        }   
       }
     }
   }
