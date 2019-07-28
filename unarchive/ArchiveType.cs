@@ -1,4 +1,4 @@
-namespace unarchive
+namespace Unarchive
 {
   public enum ArchiveType
   {

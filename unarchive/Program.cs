@@ -2,17 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using CommandLine;
 using Serilog;
-using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using SharpCompress.Archives;
 using SharpCompress.Archives.Rar;
 using SharpCompress.Common;
 
-namespace unarchive
+[assembly: InternalsVisibleTo("Unarchive.Test")]
+namespace Unarchive
 {
+  // ReSharper disable once ClassNeverInstantiated.Global
   internal class Program
   {
     private static CliOptions CliOptions { get; set; }
@@ -77,6 +80,13 @@ namespace unarchive
       }
     }
 
+    internal static string GetShowName(string cwd)
+    {
+      var nameEndPattern = new Regex(@"\.(1080p|720p|(s\d{1,2}(e\d{1,2})?))", RegexOptions.IgnoreCase);
+      var match = nameEndPattern.Match(cwd);
+      return match.Index == 0 ? cwd : cwd.Substring(0, match.Index);
+    }
+
     private static void UnpackMovie()
     {
       var cwd = Directory.GetCurrentDirectory();
@@ -95,17 +105,15 @@ namespace unarchive
     private static void UnpackRar(string source, string destination)
     {
       Log.Information($"Unpacking {source}");
-        using (var archive = RarArchive.Open(source))
+      using var archive = RarArchive.Open(source);
+      foreach (var entry in archive.Entries)
+      {
+        entry.WriteToDirectory(destination, new ExtractionOptions
         {
-          foreach (var entry in archive.Entries)
-          {
-            entry.WriteToDirectory(destination, new ExtractionOptions
-            {
-              ExtractFullPath = true,
-              Overwrite = true
-            });
-          }
-        }
+          ExtractFullPath = true,
+          Overwrite = true
+        });
+      }
     }
   }
 }

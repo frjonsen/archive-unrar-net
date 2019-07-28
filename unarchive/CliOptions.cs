@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace unarchive
+namespace Unarchive
 {
   public class CliOptions
   {
